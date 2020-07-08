@@ -584,6 +584,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "thread",
 ]
 
 [[package]]
@@ -737,6 +738,12 @@ checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width",
 ]
+
+[[package]]
+name = "thread"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "afe9c0e959dd1e7b871071b51bc674380d1889cd4fed9f4b3b1f5c1772d9f796"
 
 [[package]]
 name = "tinyvec"
