@@ -1,8 +1,7 @@
 extern crate serde;
 extern crate serde_json;
-
-
-
+use fork::{daemon, Fork};
+use std::process::Command;
 
 
 fn main() {
@@ -13,7 +12,26 @@ fn main() {
     let fp = get_first_partition("/dev/sda").unwrap();
     println!("Partitions Used: {}\n",cnt);
     println!("First Partition: {}\n",fp);
-    get_partition_json("/dev/sda");
+    let extrapart = get_extra_partitions("/dev/sda");
+    println!("Extra Partitions = {}\n",extrapart.len());
+    if extrapart.len() > 0 {
+       for p in extrapart.iter() {
+          println!("Idx: {} Name: {}\n",p.idx, p.name);
+          }
+       }
+   erase_disk();
+   println!("Disk is erased\n");
+   add_extra_partitions("/dev/sda",extrapart);
+}
+
+fn erase_disk() {
+    if let Ok(Fork::Child) = daemon(false, false) {
+        Command::new("wipefs")
+            .arg("-a")
+            .arg("/dev/sda")
+            .output()
+            .expect("failed to execute process");
+    }
 }
 
 fn read_part() {
@@ -71,24 +89,24 @@ fn get_first_partition(disk: &str) -> Result<u32,std::io::Error> {
 
 pub struct GptPartition {
     pub idx: u32,
-    pub partition_type: String,
-    pub guid: String,
+    pub partition_type: [u8; 16],
+    pub guid: [u8; 16],
     pub start_lba: u64,
     pub end_lba: u64,
-    pub fstype: String,
-    pub attriubutes: u64,
+    pub attributes: u64,
     pub name: String,
 }
 
-fn get_extra_partitions(disk:&str) -> Result<Vec<GptPartition>> {
+fn get_extra_partitions(disk:&str) -> Vec<GptPartition> {
     let mut f = std::fs::File::open(disk.to_string())
       .expect("Cannot open disk");
     let gpt = gptman::GPT::find_from(&mut f)
       .expect("GPT Partitions not found");
     let mut result: Vec<GptPartition> = Vec::new();
+    let mut uidx = 0;
     for (_i, p) in gpt.iter() {
         if p.is_used() {
-           if uidx > 4 {
+           if uidx > 3 {
               result.push(GptPartition {
                    idx: uidx,
                    partition_type: p.partition_type_guid,
@@ -96,32 +114,56 @@ fn get_extra_partitions(disk:&str) -> Result<Vec<GptPartition>> {
                    start_lba: p.starting_lba,
                    end_lba:   p.ending_lba,
                    attributes: p.attribute_bits,
-                   name:       String::from_utf8_lossy(&p.partition_name),
+                   name:       p.partition_name.to_string(),
                    } );
+              }
            uidx = uidx + 1;
            }
         }
-
-
+   return result;
 }
 
-fn get_partition_json(disk: &str) -> String {
+fn get_gpt_partitions(disk:&str) -> Vec<GptPartition> {
     let mut f = std::fs::File::open(disk.to_string())
       .expect("Cannot open disk");
     let gpt = gptman::GPT::find_from(&mut f)
       .expect("GPT Partitions not found");
-    let hdr = serde_json::to_string(&gpt.header).unwrap();
-    println!("{}",hdr);
+    let mut result: Vec<GptPartition> = Vec::new();
     let mut uidx = 0;
     for (_i, p) in gpt.iter() {
         if p.is_used() {
-           let j = serde_json::to_string(&p).unwrap();
-           println!("x: {} {}", uidx,j);
+              result.push(GptPartition {
+                   idx: uidx,
+                   partition_type: p.partition_type_guid,
+                   guid: p.unique_parition_guid,
+                   start_lba: p.starting_lba,
+                   end_lba:   p.ending_lba,
+                   attributes: p.attribute_bits,
+                   name:       p.partition_name.to_string(),
+                   } );
+              }
            uidx = uidx + 1;
-           }
         }
-
-
-    return "".to_string();
+   return result;
 }
+
+fn add_extra_partitions(disk:&str,extra_parts:Vec<GptPartition>) -> Vec<GptPartition>  {
+    let mut f = std::fs::File::open(disk.to_string())
+      .expect("Cannot open disk");
+    let mut gpt = gptman::GPT::find_from(&mut f)
+      .expect("GPT Partitions not found");
+    for p in extra_parts.iter() {
+        gpt[p.idx] = gptman::GPTPartitionEntry {
+                    partition_type_guid: p.partition_type,
+                    unique_parition_guid: p.guid,
+                    starting_lba:  p.start_lba,
+                    ending_lba:    p.end_lba,
+                    attribute_bits: p.attributes,
+                    partition_name: p.name[..].into(),
+                    };
+        }
+   let result = get_gpt_partitions(disk);
+   return result;
+}
+
 
