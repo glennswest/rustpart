@@ -1,0 +1,11 @@
+label: gpt
+label-id: 00000000-0000-4000-A000-000000000001
+device: /dev/sda
+unit: sectors
+first-lba: 34
+
+/dev/sda1 : start=        2048, size=      786432, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=6300807E-5773-43E5-9247-F2604262A7C2, name="boot"
+/dev/sda2 : start=      788480, size=      260096, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, uuid=BD43B9DE-CCCF-4C30-9E31-84E5FC42AA70, name="EFI-SYSTEM"
+/dev/sda3 : start=     1048576, size=        2048, type=21686148-6449-6E6F-744E-656564454649, uuid=54CE0A6F-A377-43DF-AA9B-B7EF35D379A7, name="BIOS-BOOT"
+/dev/sda4 : start=     1050624, size=     5474271, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=89149B4F-6EE5-4A6E-B28C-A505D7A5DB83, name="luks_root"
+/dev/sda5 : start=   247220224, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=DED9849F-E33B-4F7F-8280-47E296F76698, name="datastore"

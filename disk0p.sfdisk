@@ -1,0 +1,6 @@
+label: gpt
+label-id: 00000000-0000-4000-A000-000000000001
+device: /dev/sda
+unit: sectors
+first-lba: 34
+
