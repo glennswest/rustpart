@@ -2,6 +2,7 @@ extern crate serde;
 extern crate serde_json;
 use std::process::Command;
 use std::{thread, time};
+use std::fs;
 
 
 fn main() {
@@ -181,18 +182,20 @@ fn add_extra_partitions(disk:&str,extra_parts:Vec<GptPartition>) -> Vec<GptParti
         println!("Adding {} into slot {}\n",p.name,p.idx);
         println!("Start: {}\n",p.start_lba);
         println!("End:   {}\n",p.end_lba);
-        //gpt[p.idx+1] = gptman::GPTPartitionEntry {
-        gpt[5] = gptman::GPTPartitionEntry {
+        gpt[p.idx] = gptman::GPTPartitionEntry {
                     starting_lba:  p.start_lba,
                     ending_lba:    p.end_lba,
                     attribute_bits: p.attributes,
                     partition_name: p.name[..].into(),
-                    partition_type_guid: [0xff; 16],
-                    unique_parition_guid: [0xff; 16],
-                    //partition_type_guid: p.partition_type,
-                    //unique_parition_guid: p.guid,
+                    partition_type_guid: p.partition_type,
+                    unique_parition_guid: p.guid,
                     };
         }
+    drop(f);
+    let mut f = fs::OpenOptions::new().write(true).open(disk.to_string())
+                .expect("Cannot open device for write");
+    gpt.write_into(&mut f)
+        .expect("Cannot write data into gpt");
    drop (f) ;
    let result = get_gpt_partitions(disk);
    return result;
