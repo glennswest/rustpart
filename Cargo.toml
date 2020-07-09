@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["root"]
 edition = "2018"
 
+[[bin]]
+name = "rustpart"
+path = "src/main.rs"
+
+[[bin]]
+name = "btest"
+path = "src/btest/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

@@ -19,9 +19,13 @@ fn main() {
           println!("Idx: {} Name: {}\n",p.idx, p.name);
           }
        }
-   //erase_disk();
+   erase_disk();
    add_extra_partitions("/dev/sda",extrapart);
-}
+   println!("**** Active parts\n");
+   read_part();
+   println!("**** All parts\n");
+   read_all_part();
+} 
 
 fn erase_disk() {
 
@@ -43,12 +47,31 @@ fn read_part() {
 
    for (i, p) in gpt.iter() {
      if p.is_used() {
-        println!("Partition #{}: type = {:?}, size = {} bytes, starting lba = {}",
+        println!("Partition #{}: name = {} type = {:?}, size = {} bytes, starting lba = {}",
             i,
+            p.partition_name.to_string(),
             p.partition_type_guid,
             p.size().unwrap() * gpt.sector_size,
             p.starting_lba);
+            }
     }
+  }
+  
+fn read_all_part() {
+   let mut f = std::fs::File::open("/dev/sda")
+    .expect("could not open disk");
+   let gpt = gptman::GPT::find_from(&mut f)
+      .expect("could not find GPT");
+
+   println!("Disk GUID: {:?}", gpt.header.disk_guid);
+
+   for (i, p) in gpt.iter() {
+        println!("Partition #{}: name = {} type = {:?}, size = {} bytes, starting lba = {}",
+            i,
+            p.partition_name.to_string(),
+            p.partition_type_guid,
+            p.size().unwrap() * gpt.sector_size,
+            p.starting_lba);
   }
 }
 
@@ -112,7 +135,8 @@ fn get_extra_partitions(disk:&str) -> Vec<GptPartition> {
                    guid: p.unique_parition_guid,
                    start_lba: p.starting_lba,
                    end_lba:   p.ending_lba,
-                   attributes: p.attribute_bits,
+                   //attributes: p.attribute_bits,
+                   attributes: 0,
                    name:       p.partition_name.to_string(),
                    } );
               }
@@ -158,18 +182,19 @@ fn add_extra_partitions(disk:&str,extra_parts:Vec<GptPartition>) -> Vec<GptParti
         println!("Start: {}\n",p.start_lba);
         println!("End:   {}\n",p.end_lba);
         //gpt[p.idx+1] = gptman::GPTPartitionEntry {
-        gpt[6] = gptman::GPTPartitionEntry {
-                    partition_type_guid: p.partition_type,
-                    unique_parition_guid: p.guid,
+        gpt[5] = gptman::GPTPartitionEntry {
                     starting_lba:  p.start_lba,
                     ending_lba:    p.end_lba,
                     attribute_bits: p.attributes,
                     partition_name: p.name[..].into(),
+                    partition_type_guid: [0xff; 16],
+                    unique_parition_guid: [0xff; 16],
+                    //partition_type_guid: p.partition_type,
+                    //unique_parition_guid: p.guid,
                     };
         }
    drop (f) ;
    let result = get_gpt_partitions(disk);
    return result;
 }
-
 
